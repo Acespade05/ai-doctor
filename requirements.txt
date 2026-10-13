@@ -1,0 +1,6 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+requests==2.32.3
+# Tier 2 RAG. If this fails to build on your VM, the Doctor still runs
+# rules-only (RAG degrades gracefully); remove this line to skip it.
+chromadb==0.5.23
