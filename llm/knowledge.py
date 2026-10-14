@@ -22,6 +22,27 @@ KNOWN_INCIDENTS = [
         "recommended_action": "restart the redis container; confirm the app reconnects.",
     },
     {
+        "id": "app_down",
+        "title": "App container down",
+        "symptom": "The shopsmart_app container is not running; API 5xx, health probe failing.",
+        "root_cause": "The application container has stopped or crashed.",
+        "recommended_action": "restart the shopsmart_app container; verify the health probe recovers.",
+    },
+    {
+        "id": "nginx_down",
+        "title": "Nginx / gateway down",
+        "symptom": "The shopsmart_nginx container is not running; the whole site is unreachable.",
+        "root_cause": "The reverse-proxy container has stopped — no entrypoint to the site.",
+        "recommended_action": "restart the shopsmart_nginx container; verify the site responds.",
+    },
+    {
+        "id": "db_down",
+        "title": "Database down",
+        "symptom": "The shopsmart_postgres container is not running; queries fail, 5xx on data routes.",
+        "root_cause": "The PostgreSQL container has stopped or crashed.",
+        "recommended_action": "restart the shopsmart_postgres container; confirm the app reconnects.",
+    },
+    {
         "id": "db_slow",
         "title": "Database latency",
         "symptom": "Slow queries, rising DB connection count, checkout timeouts.",

@@ -40,6 +40,37 @@ def fetch_patient(url):
         return None, None
 
 
+# latest container view per patient, for the Doctor's service map
+LATEST_CONTAINERS = {}
+
+
+def fetch_containers(url):
+    """GET <url>/containers -> {name: status} or None if the agent can't report it."""
+    try:
+        r = requests.get(f"{url}/containers", timeout=HTTP_TIMEOUT)
+        if r.status_code == 200:
+            return r.json().get("containers") or None
+    except (requests.RequestException, ValueError):
+        pass
+    return None
+
+
+# latest traffic telemetry per patient, for the dashboard chart
+LATEST_TRAFFIC = {}
+
+
+def fetch_traffic(url):
+    """GET <url>/traffic -> {rps, error_rate, rate_limited_rate, top_ip, ...} or None."""
+    try:
+        r = requests.get(f"{url}/traffic", timeout=HTTP_TIMEOUT)
+        if r.status_code == 200:
+            d = r.json()
+            return d if d.get("available") else None
+    except (requests.RequestException, ValueError):
+        pass
+    return None
+
+
 def probe_public():
     """Probe the public site. Returns (up, status, latency_ms)."""
     t0 = time.perf_counter()
@@ -101,7 +132,13 @@ def poll_once():
         metrics, age = fetch_patient(p["url"])
         sample = build_sample(p["name"], metrics, age, probe)
         storage.insert_sample(sample)
-        reconcile(p["name"], detect(sample))
+        containers = fetch_containers(p["url"])
+        if containers is not None:
+            LATEST_CONTAINERS[p["name"]] = containers
+        traffic = fetch_traffic(p["url"])
+        if traffic is not None:
+            LATEST_TRAFFIC[p["name"]] = traffic
+        reconcile(p["name"], detect(sample, containers, traffic))
         # Drive remediation for any open auto-remediable incidents.
         remediation.process(p["name"], p["url"])
 

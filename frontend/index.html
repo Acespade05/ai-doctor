@@ -1,472 +1,627 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>AI Doctor — Operations</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>AI-SRE Doctor</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🩺</text></svg>"/>
 <style>
   :root{
-    --bg:#070b12; --panel:#0e1621; --panel2:#111c29; --border:#1c2a3a;
-    --ink:#e8eef6; --muted:#8495a8; --faint:#5b6b7e;
-    --teal:#2fd3a6; --teal-dim:#1c3b36; --amber:#f3b14e; --red:#ef6a6a; --blue:#5aa0f0;
-    --radius:16px;
+    --bg:#090d1a; --bg2:#0b1020; --panel:#111830; --panel2:#0d1324; --line:#1d2742;
+    --ink:#eaeefb; --muted:#8a96b8; --dim:#5b688a;
+    --violet:#8b5cf6; --violet2:#a78bfa; --violet-dim:#2e1f52;
+    --teal:#2dd4bf; --blue:#3b82f6; --green:#22c55e; --amber:#f59e0b; --red:#ef4444;
+    --radius:14px;
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);
-    font-family:"Inter",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:14px;line-height:1.45}
-  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-  a{color:inherit;text-decoration:none}
+    font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  a{color:var(--violet2);text-decoration:none}
+  .muted{color:var(--muted)} .dim{color:var(--dim)}
+
   /* layout */
-  header{display:flex;align-items:center;justify-content:space-between;gap:16px;
-    padding:16px 24px;border-bottom:1px solid var(--border)}
-  .brand{display:flex;align-items:center;gap:12px}
-  .logo{width:42px;height:42px;border-radius:12px;
-    background:radial-gradient(120% 120% at 30% 20%,#17324a,#0f1b26);display:grid;place-items:center;
-    border:1px solid var(--border);color:var(--teal);font-size:20px}
-  .brand h1{font-size:17px;margin:0;letter-spacing:.2px}
-  .brand p{margin:0;color:var(--faint);font-size:11px;letter-spacing:1.5px;text-transform:uppercase}
-  .hdr-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-  .sync{color:var(--muted);font-size:12px}
-  .pill{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:999px;
-    border:1px solid var(--border);font-size:12.5px;background:var(--panel)}
-  .dot{width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 8px var(--teal)}
-  .dot.red{background:var(--red);box-shadow:0 0 8px var(--red)}
-  .dot.amber{background:var(--amber);box-shadow:0 0 8px var(--amber)}
-  .roles{display:flex;border:1px solid var(--border);border-radius:10px;overflow:hidden}
-  .roles button{background:transparent;border:0;color:var(--muted);padding:8px 14px;cursor:pointer;font-size:13px}
-  .roles button.active{background:var(--teal-dim);color:var(--teal)}
-  .wrap{display:grid;grid-template-columns:230px 1fr;min-height:calc(100vh - 75px)}
-  nav{border-right:1px solid var(--border);padding:22px 16px}
-  nav .lbl{color:var(--faint);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;margin:0 8px 12px}
-  nav a{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:11px;color:var(--muted);cursor:pointer;margin-bottom:4px}
-  nav a.active{background:var(--panel);color:var(--ink);border:1px solid var(--border)}
-  nav a.active .ic{color:var(--teal)}
-  .note{margin-top:22px;padding:14px;border:1px dashed var(--border);border-radius:12px;color:var(--muted);font-size:12.5px}
-  main{padding:26px 30px;max-width:1500px}
-  .eyebrow{color:var(--teal);font-size:12px;letter-spacing:1.5px;text-transform:uppercase;font-weight:600}
-  h2.hero{font-size:40px;margin:6px 0 8px;font-weight:700;letter-spacing:-.5px}
-  .sub{color:var(--muted);max-width:620px}
-  .btns{display:flex;gap:12px;flex-wrap:wrap;margin:18px 0 26px}
-  .btn{display:inline-flex;align-items:center;gap:8px;padding:11px 18px;border-radius:11px;border:1px solid var(--border);
-    background:var(--panel);color:var(--ink);cursor:pointer;font-size:13.5px}
-  .btn.primary{background:var(--teal);color:#06231b;border-color:transparent;font-weight:600}
+  .app{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+  .side{background:var(--bg2);border-right:1px solid var(--line);padding:18px 14px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:6px}
+  .logo{display:flex;align-items:center;gap:10px;padding:6px 8px 16px}
+  .logo .mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--violet),var(--teal));display:grid;place-items:center;font-size:18px}
+  .logo b{font-size:15px;display:block}.logo span{font-size:11px;color:var(--dim)}
+  .navlbl{font-size:10px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;padding:12px 8px 6px}
+  .nav{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:var(--muted);cursor:pointer;font-weight:600;font-size:13.5px}
+  .nav:hover{background:var(--panel2);color:var(--ink)}
+  .nav.on{background:var(--violet-dim);color:#fff;box-shadow:inset 0 0 0 1px rgba(139,92,246,.4)}
+  .nav .ic{width:17px;height:17px;opacity:.9}
+  .side .foot{margin-top:auto;font-size:11px;color:var(--dim);padding:10px 8px;border-top:1px solid var(--line)}
+
+  .main{display:flex;flex-direction:column;min-width:0}
+  header{display:flex;align-items:center;gap:14px;padding:16px 26px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(9,13,26,.92);backdrop-filter:blur(8px);z-index:10}
+  .status{display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px rgba(34,197,94,.15)}
+  .dot.off{background:var(--red);box-shadow:0 0 0 4px rgba(239,68,68,.15)}
+  .dot.warn{background:var(--amber);box-shadow:0 0 0 4px rgba(245,158,11,.15)}
+  .grow{flex:1}
+  .sync{font-size:12px;color:var(--dim)}
+  .pills{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:3px}
+  .pills button{border:0;background:transparent;color:var(--muted);padding:7px 15px;border-radius:999px;cursor:pointer;font-weight:700;font-size:12.5px}
+  .pills button.on{background:var(--violet);color:#fff}
+
+  .content{padding:26px;max-width:1240px;width:100%}
+  .page{display:none}.page.on{display:block}
+  .hero-h{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--violet2);font-weight:700}
+  .hero-t{font-size:30px;font-weight:800;margin:4px 0 2px;letter-spacing:-.01em}
+  .hero-s{color:var(--muted);margin-bottom:22px}
+
   .grid{display:grid;gap:16px}
-  .cols-3{grid-template-columns:repeat(3,1fr)}
-  .cols-4{grid-template-columns:repeat(4,1fr)}
-  .card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--border);
-    border-radius:var(--radius);padding:20px}
-  .card h3{margin:0;font-size:15px}
-  .card .cap{color:var(--muted);font-size:12.5px;margin-top:3px}
-  .card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
-  .big{font-size:30px;font-weight:700;margin:14px 0 2px}
-  .tile .big{font-size:34px}
-  .tile .k{color:var(--muted);font-size:12.5px}
-  .bar{height:8px;border-radius:999px;background:#0b1420;overflow:hidden;margin:14px 0 8px}
-  .bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--amber),var(--teal))}
-  .row{display:flex;gap:26px;margin-top:14px}
-  .row .k{color:var(--faint);font-size:11px;text-transform:uppercase;letter-spacing:1px}
-  .row .v{font-size:17px;font-weight:600}
-  .section-t{font-size:16px;margin:30px 0 14px;font-weight:600}
+  .g4{grid-template-columns:repeat(4,1fr)}.g3{grid-template-columns:repeat(3,1fr)}
+  .g2{grid-template-columns:1fr 1fr}.g23{grid-template-columns:1.5fr 1fr}
+  @media(max-width:1000px){.g4{grid-template-columns:1fr 1fr}.g3,.g2,.g23{grid-template-columns:1fr}}
+  @media(max-width:620px){.g4{grid-template-columns:1fr}}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+  .card h3{margin:0 0 3px;font-size:15px}
+  .card .cap{font-size:12px;color:var(--dim);margin-bottom:14px}
+  .ch{display:flex;align-items:center;margin-bottom:14px}.ch h3{margin:0}.ch .r{margin-left:auto}
+
+  .kpi{display:flex;flex-direction:column;gap:2px}
+  .kpi .ic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;margin-bottom:12px;font-size:18px}
+  .kpi .v{font-size:30px;font-weight:800;letter-spacing:-.01em}
+  .kpi .l{font-weight:700;font-size:13px}.kpi .s{font-size:12px;color:var(--dim)}
+  .v.ok{color:var(--green)}.v.warn{color:var(--amber)}.v.bad{color:var(--red)}.v.vi{color:var(--violet2)}
+
+  .svc{display:flex;align-items:center;gap:12px;padding:11px 12px;border:1px solid var(--line);border-radius:11px;margin-bottom:9px}
+  .svc .nm{font-weight:700;font-size:13px}.svc .rl{font-size:11px;color:var(--dim)}
+  .svc .st{margin-left:auto;display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700}
+
+  .tl{display:flex;gap:11px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
+  .tl:last-child{border-bottom:0}
+  .tl .tm{color:var(--dim);font-size:11px;min-width:58px;font-variant-numeric:tabular-nums}
+  .tl .bd{width:7px;height:7px;border-radius:50%;margin-top:6px;flex-shrink:0}
+
   table{width:100%;border-collapse:collapse}
-  th{text-align:left;color:var(--faint);font-size:11px;text-transform:uppercase;letter-spacing:1px;
-    padding:10px 10px;border-bottom:1px solid var(--border)}
-  td{padding:14px 10px;border-bottom:1px solid #121e2b;font-size:13.5px;vertical-align:top}
-  .tag{display:inline-block;padding:3px 9px;border-radius:7px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
-  .tag.high{background:#3a2c12;color:var(--amber)} .tag.critical{background:#3a1717;color:var(--red)}
-  .tag.medium{background:#13303a;color:var(--blue)} .tag.open{background:#3a1717;color:var(--red)}
-  .tag.resolved{background:#13302a;color:var(--teal)} .tag.escalated{background:#3a2c12;color:var(--amber)}
-  .muted{color:var(--muted)} .faint{color:var(--faint)}
-  .check{list-style:none;padding:0;margin:14px 0 0}
-  .check li{display:flex;gap:9px;align-items:flex-start;margin:9px 0;color:var(--muted);font-size:13px}
-  .check li::before{content:"✓";color:var(--teal)}
-  .placeholder{border:1px dashed var(--border);border-radius:12px;padding:22px;color:var(--faint);
-    display:grid;place-items:center;text-align:center;min-height:120px}
-  .tier{display:flex;align-items:center;gap:12px;padding:13px;border:1px solid var(--border);border-radius:12px;margin-top:10px}
-  .tier .n{color:var(--faint);font-family:ui-monospace,monospace}
-  .tier .st{margin-left:auto;font-size:11px;letter-spacing:1px;color:var(--faint)}
-  .tier .st.on{color:var(--teal)}
-  svg.chart{width:100%;height:170px;display:block}
-  svg.spark{width:100%;height:34px;display:block;margin-top:12px}
-  .legend{display:flex;gap:20px;flex-wrap:wrap;margin-top:14px;color:var(--muted);font-size:12px}
-  .legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}
-  input.num{background:#0b1420;border:1px solid var(--border);border-radius:10px;color:var(--ink);padding:12px;width:100%;font-size:15px}
-  .lbl2{color:var(--muted);font-size:12.5px;margin-bottom:7px}
-  .chaos{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-top:14px}
-  .chaos .c{border:1px solid var(--border);border-radius:12px;padding:14px;background:var(--panel);opacity:.55}
-  .chaos .c b{font-size:13.5px} .chaos .c p{color:var(--faint);font-size:11.5px;margin:6px 0 0}
-  .hide{display:none!important}
-  .overlay{position:fixed;inset:0;background:rgba(3,6,11,.72);backdrop-filter:blur(3px);display:none;align-items:flex-start;justify-content:center;padding:48px 16px;z-index:50;overflow:auto}
-  .overlay.show{display:flex}
-  .modal{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--border);border-radius:16px;max-width:720px;width:100%;padding:26px}
-  .modal .x{float:right;cursor:pointer;color:var(--muted);font-size:20px;line-height:1}
-  .kv{display:grid;grid-template-columns:150px 1fr;gap:9px 16px;margin-top:12px}
-  .kv .k{color:var(--faint);font-size:11.5px;text-transform:uppercase;letter-spacing:.5px}
-  .ev{border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-top:8px;color:var(--muted);font-size:13px}
-  #incidents tr{cursor:pointer}
-  @media(max-width:1100px){.cols-3,.cols-4{grid-template-columns:repeat(2,1fr)}.wrap{grid-template-columns:1fr}nav{display:none}.chaos{grid-template-columns:repeat(2,1fr)}}
-  @media(max-width:560px){.cols-3,.cols-4{grid-template-columns:1fr}h2.hero{font-size:30px}main{padding:18px 16px}}
+  th,td{text-align:left;padding:11px 8px;border-bottom:1px solid var(--line);font-size:13px}
+  th{color:var(--dim);font-weight:700;text-transform:uppercase;font-size:10.5px;letter-spacing:.05em}
+  tbody tr{cursor:pointer}tbody tr:hover{background:var(--panel2)}
+  .nohover tbody tr{cursor:default}.nohover tbody tr:hover{background:transparent}
+
+  .tag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:800}
+  .tag.open,.tag.escalated{background:rgba(239,68,68,.16);color:#fca5a5}
+  .tag.resolved,.tag.done{background:rgba(34,197,94,.16);color:#86efac}
+  .tag.pending{background:rgba(245,158,11,.16);color:#fcd34d}
+  .tag.failed{background:rgba(239,68,68,.16);color:#fca5a5}
+  .tag.t1{background:rgba(59,130,246,.16);color:#93c5fd}
+  .tag.t2{background:rgba(45,212,191,.16);color:#5eead4}
+  .tag.t3{background:rgba(168,85,247,.16);color:#d8b4fe}
+  .tag.hi{background:rgba(239,68,68,.14);color:#fca5a5}
+  .tag.med{background:rgba(245,158,11,.14);color:#fcd34d}
+  .code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
+  .http{font-family:ui-monospace,monospace;font-weight:800;padding:1px 7px;border-radius:6px;font-size:11px}
+  .http.e5{background:rgba(239,68,68,.16);color:#fca5a5}.http.e4{background:rgba(245,158,11,.16);color:#fcd34d}.http.e2{background:rgba(34,197,94,.16);color:#86efac}
+
+  .btn{border:1px solid var(--line);background:var(--panel2);color:var(--ink);padding:9px 14px;border-radius:10px;cursor:pointer;font-weight:700;font-size:13px}
+  .btn:hover{border-color:var(--violet)}
+  .btn.danger{border-color:#7f1d1d;color:#fca5a5}.btn.danger:hover{border-color:var(--red);background:rgba(239,68,68,.08)}
+  .btn.go{border-color:#134e4a;color:var(--teal)}.btn.go:hover{background:rgba(45,212,191,.08)}
+
+  canvas{width:100%;display:block}
+  .legend{display:flex;gap:16px;font-size:11px;color:var(--muted);margin-top:8px;flex-wrap:wrap}
+  .legend i{display:inline-block;width:18px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+
+  .banner{border-radius:13px;padding:16px 20px;margin-bottom:18px;display:flex;align-items:center;gap:16px}
+  .banner.ok{background:linear-gradient(90deg,#0d2018,#0d1324);border:1px solid #14532d}
+  .banner.bad{background:linear-gradient(90deg,#241012,#0d1324);border:1px solid #7f1d1d}
+  .banner .ico{font-size:30px}
+  .banner h2{margin:0;font-size:19px}.banner p{margin:2px 0 0;font-size:13px;color:var(--muted)}
+  .banner .rt{margin-left:auto;text-align:right}
+
+  /* diagnosis card */
+  .diag .blk{border:1px solid var(--line);border-radius:11px;padding:13px 15px;margin-top:11px}
+  .diag .lbl{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);font-weight:700;margin-bottom:5px}
+  .diag .root{border-left:3px solid var(--amber)}
+  .diag .act{border-left:3px solid var(--green)}
+  .diag .hum{border-left:3px solid var(--violet)}
+  .evi{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:9px 11px;margin-top:7px;font-size:12.5px;color:var(--muted)}
+
+  /* ring */
+  .ringwrap{display:flex;align-items:center;gap:20px}
+  .ringnum{font-size:32px;font-weight:800}
+
+  /* bars (recovery trend) */
+  .bars{display:flex;align-items:flex-end;gap:10px;height:150px;padding-top:10px}
+  .bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;justify-content:flex-end}
+  .bar .col{width:100%;border-radius:6px 6px 0 0;min-height:4px}
+  .bar .lb{font-size:10px;color:var(--dim)}.bar .vl{font-size:11px;font-weight:700}
+
+  /* pipeline */
+  .tier{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:11px;margin-bottom:9px}
+  .tier .n{width:26px;height:26px;border-radius:8px;background:var(--panel2);display:grid;place-items:center;font-size:12px;font-weight:800;color:var(--dim)}
+  .tier .tt{font-weight:700;font-size:13px}.tier .td{font-size:12px;color:var(--dim)}
+  .tier .rd{margin-left:auto;font-size:11px;font-weight:800;color:var(--teal)}
+
+  .eval-card .row{display:flex;align-items:center;gap:10px;margin:9px 0;font-size:13px}
+  .eval-card .track{flex:1;height:8px;background:var(--panel2);border-radius:5px;overflow:hidden}
+  .eval-card .fill{height:100%;border-radius:5px}
+  .pill-note{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:700;color:var(--amber);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);padding:5px 11px;border-radius:999px}
+
+  .empty{color:var(--dim);padding:22px;text-align:center}
+  .foot{color:var(--dim);font-size:11.5px;margin-top:10px}
+
+  /* modal */
+  .ov{position:fixed;inset:0;background:rgba(3,6,14,.74);display:none;align-items:flex-start;justify-content:center;z-index:50;padding:40px 16px;overflow:auto}
+  .ov.on{display:flex}
+  .modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;width:100%;max-width:720px;padding:24px}
+  .modal .x{float:right;cursor:pointer;color:var(--muted);font-size:20px;border:0;background:0}
+  .kv{display:grid;grid-template-columns:150px 1fr;gap:8px 14px;margin:14px 0}
+  .kv .k{color:var(--dim)}
+  @media(max-width:620px){.kv{grid-template-columns:1fr}.app{grid-template-columns:1fr}.side{display:none}}
 </style>
 </head>
 <body>
-<header>
-  <div class="brand">
-    <div class="logo">❤</div>
-    <div><h1>AI Doctor</h1><p>Agentic AIOps · Automated Fault Recovery</p></div>
-  </div>
-  <div class="hdr-right">
-    <span class="sync" id="sync">Last sync —</span>
-    <span class="pill" id="doctor-state"><span class="dot" id="doctor-dot"></span><span id="doctor-text">connecting…</span></span>
-    <div class="roles" id="roles">
-      <button data-role="engineer" class="active">Engineer</button>
-      <button data-role="founder">Founder</button>
-      <button data-role="executive">Executive</button>
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="side">
+    <div class="logo"><div class="mark">🩺</div><div><b>AI-SRE Doctor</b><span>Self-Healing Infrastructure</span></div></div>
+    <div class="navlbl">Control plane</div>
+    <div class="nav on" data-tab="overview"><span class="ic">◉</span> Overview</div>
+    <div class="nav" data-tab="incidents"><span class="ic">▤</span> Incidents</div>
+    <div class="nav" data-tab="chaos"><span class="ic">⚡</span> Chaos Lab</div>
+    <div class="navlbl">Research</div>
+    <div class="nav" data-tab="evaluation"><span class="ic">◷</span> Evaluation</div>
+    <div class="nav" data-tab="architecture"><span class="ic">⬡</span> Architecture</div>
+    <div class="foot" id="side-foot">Monitoring patient every 10s</div>
+  </aside>
+
+  <div class="main">
+    <header>
+      <div class="status"><span class="dot" id="live-dot"></span> <span id="live-text">Doctor online</span></div>
+      <span class="sync" id="sync">—</span>
+      <div class="grow"></div>
+      <div class="pills" id="role">
+        <button data-role="engineer" class="on">Engineer</button>
+        <button data-role="founder">Founder</button>
+        <button data-role="executive">Executive</button>
+      </div>
+    </header>
+
+    <div class="content">
+
+    <!-- ===================== OVERVIEW ===================== -->
+    <section class="page on" id="p-overview">
+
+      <!-- ENGINEER overview -->
+      <div class="rolepage" id="ov-engineer">
+        <div class="hero-h">Live operations / patient: shopsmart</div>
+        <div class="hero-t">The Doctor is on call.</div>
+        <div class="hero-s">Telemetry → diagnosis → verified recovery, in one view.</div>
+
+        <div class="grid g4">
+          <div class="card kpi"><div class="ic" style="background:rgba(34,197,94,.14)">🛡</div><div class="v ok" id="k-status">—</div><div class="l">System status</div><div class="s" id="k-status-s">live health</div></div>
+          <div class="card kpi"><div class="ic" style="background:rgba(245,158,11,.14)">⚡</div><div class="v" id="k-mttr">—</div><div class="l">Avg recovery</div><div class="s">mean time to recovery</div></div>
+          <div class="card kpi"><div class="ic" style="background:rgba(139,92,246,.14)">✓</div><div class="v vi" id="k-success">—</div><div class="l">Success rate</div><div class="s" id="k-success-s">auto-healed</div></div>
+          <div class="card kpi"><div class="ic" style="background:rgba(59,130,246,.14)">▦</div><div class="v" id="k-total">—</div><div class="l">Total incidents</div><div class="s" id="k-total-s">—</div></div>
+        </div>
+
+        <div class="grid g23" style="margin-top:16px">
+          <div class="card">
+            <div class="ch"><h3>Telemetry</h3><span class="r muted" style="font-size:12px">live · last 15 min</span></div>
+            <canvas id="chart-util" height="150"></canvas>
+            <div class="legend"><span><i style="background:#2dd4bf"></i>CPU</span><span><i style="background:#3b82f6"></i>Memory</span><span><i style="background:#f59e0b"></i>Disk</span></div>
+          </div>
+          <div class="card">
+            <div class="ch"><h3>Service map</h3></div>
+            <div id="svcmap"></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+          <div class="ch"><h3>Traffic</h3><span class="r muted" id="traffic-cap" style="font-size:12px">requests/sec · live from nginx</span></div>
+          <canvas id="chart-traffic" height="140"></canvas>
+          <div class="legend"><span><i style="background:#2dd4bf"></i>Requests/sec</span><span><i style="background:#f59e0b"></i>Rate-limited (429) %</span><span><i style="background:#ef4444"></i>Errors (5xx) %</span></div>
+          <div id="traffic-stat" class="muted" style="font-size:12.5px;margin-top:8px"></div>
+        </div>
+
+        <div class="grid g23" style="margin-top:16px">
+          <div class="card diag" id="diag-card">
+            <div class="ch"><h3>AI diagnosis</h3><span class="r" id="diag-status"></span></div>
+            <div id="diag-body"><div class="empty">No active incident — the Doctor is standing by.</div></div>
+          </div>
+          <div class="card">
+            <div class="ch"><h3>Live timeline</h3></div>
+            <div id="timeline"></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+          <div class="ch"><h3>Diagnosis pipeline</h3><span class="r muted" id="pipe-model" style="font-size:12px"></span></div>
+          <div class="tier"><div class="n">1</div><div><div class="tt">Tier 1 · Rules engine</div><div class="td">deterministic runbook match</div></div><div class="rd" id="pipe1">ready</div></div>
+          <div class="tier"><div class="n">2</div><div><div class="tt">Tier 2 · ChromaDB RAG</div><div class="td">similar past incidents</div></div><div class="rd" id="pipe2">ready</div></div>
+          <div class="tier"><div class="n">3</div><div><div class="tt">Tier 3 · LLM fallback</div><div class="td">Groq reasoning</div></div><div class="rd" id="pipe3">ready</div></div>
+        </div>
+      </div>
+
+      <!-- FOUNDER overview -->
+      <div class="rolepage" id="ov-founder" style="display:none">
+        <div class="hero-h">Store health / shopsmart</div>
+        <div class="hero-t">Is it handled?</div>
+        <div class="hero-s">What's happening to the store right now, and what the AI is doing about it.</div>
+        <div id="founder-banner"></div>
+        <div class="grid g4">
+          <div class="card kpi"><div class="ic" style="background:rgba(34,197,94,.14)">₹</div><div class="v" id="f-rev">—</div><div class="l">Revenue today</div><div class="s" id="f-orders">— orders</div></div>
+          <div class="card kpi"><div class="ic" style="background:rgba(239,68,68,.14)">⚠</div><div class="v" id="f-risk">—</div><div class="l">At risk / min</div><div class="s">if the store goes down</div></div>
+          <div class="card kpi"><div class="ic" style="background:rgba(139,92,246,.14)">👥</div><div class="v vi" id="f-sess">—</div><div class="l">Active shoppers</div><div class="s" id="f-check">— in checkout</div></div>
+          <div class="card kpi"><div class="ic" style="background:rgba(59,130,246,.14)">🛒</div><div class="v" id="f-aov">—</div><div class="l">Avg order value</div><div class="s" id="f-conv">— conversion</div></div>
+        </div>
+        <div class="grid g23" style="margin-top:16px">
+          <div class="card diag" id="fdiag-card">
+            <div class="ch"><h3>What the Doctor sees</h3></div>
+            <div id="fdiag-body"><div class="empty">All clear — no incident in progress.</div></div>
+          </div>
+          <div class="card">
+            <div class="ch"><h3>Live timeline</h3></div>
+            <div id="ftimeline"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EXECUTIVE overview -->
+      <div class="rolepage" id="ov-executive" style="display:none">
+        <div class="hero-h">Reliability scorecard / last 30 days</div>
+        <div class="hero-t">Is this paying off?</div>
+        <div class="hero-s">The cumulative reliability and business return of the self-healing system.</div>
+        <div class="grid g23">
+          <div class="card">
+            <div class="cap">Revenue protected this month <span class="dim">· estimate</span></div>
+            <div style="font-size:48px;font-weight:800;letter-spacing:-.02em;background:linear-gradient(90deg,#a78bfa,#5eead4);-webkit-background-clip:text;background-clip:text;color:transparent" id="x-protected">—</div>
+            <div class="muted" style="margin-top:6px" id="x-protected-s">Downtime the AI avoided versus a manual response, valued at the live revenue rate.</div>
+            <canvas id="x-trend" height="80" style="margin-top:12px"></canvas>
+            <div class="foot">Estimate: compares each recovery to a <span id="x-baseline">25</span>-min manual baseline × current revenue/min.</div>
+          </div>
+          <div class="card ringwrap">
+            <svg width="130" height="130" viewBox="0 0 130 130">
+              <circle cx="65" cy="65" r="54" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="12"/>
+              <circle id="x-ring" cx="65" cy="65" r="54" fill="none" stroke="#22c55e" stroke-width="12" stroke-linecap="round" stroke-dasharray="339" stroke-dashoffset="339" transform="rotate(-90 65 65)"/>
+            </svg>
+            <div><div class="cap" style="margin:0">Uptime (30d)</div><div class="ringnum" id="x-uptime">—</div><div class="muted" style="font-size:12px" id="x-uptime-s"></div></div>
+          </div>
+        </div>
+        <div class="grid g4" style="margin-top:16px">
+          <div class="card kpi"><div class="v ok" id="x-auto">—</div><div class="l">Auto-resolved</div><div class="s" id="x-auto-s">no human needed</div></div>
+          <div class="card kpi"><div class="v" id="x-avg">—</div><div class="l">Avg recovery</div><div class="s" id="x-avg-s">vs ~25 min manual</div></div>
+          <div class="card kpi"><div class="v vi" id="x-grade">—</div><div class="l">Reliability grade</div><div class="s">uptime + MTTR + success</div></div>
+          <div class="card kpi"><div class="v" id="x-esc">—</div><div class="l">Escalated</div><div class="s">needed a human</div></div>
+        </div>
+      </div>
+
+      <!-- shared: recovery trend (eng + exec) -->
+      <div class="card" style="margin-top:16px" id="trend-card">
+        <div class="ch"><h3>Recovery-time trend</h3><span class="r muted" style="font-size:12px">last incidents (seconds)</span></div>
+        <div class="bars" id="trend-bars"></div>
+        <div class="legend"><span><i style="background:#8b5cf6"></i>Resolved</span><span><i style="background:#ef4444"></i>Escalated</span></div>
+      </div>
+    </section>
+
+    <!-- ===================== INCIDENTS ===================== -->
+    <section class="page" id="p-incidents">
+      <div class="hero-h">Audit trail</div>
+      <div class="hero-t">Incident timeline</div>
+      <div class="hero-s">Every fault, its diagnosis tier, the action taken, and recovery timing. Click a row for the full diagnosis.</div>
+      <div class="card" style="padding:0">
+        <table id="tbl-inc"><thead><tr>
+          <th>Time</th><th>Type</th><th>Code</th><th>Action</th><th>Tier</th><th>Severity</th><th>TTR</th><th>Status</th>
+        </tr></thead><tbody></tbody></table>
+      </div>
+      <div class="ch" style="margin:26px 0 12px"><h3 style="font-size:17px">Remediation actions</h3></div>
+      <div class="card" style="padding:0">
+        <table id="tbl-act" class="nohover"><thead><tr>
+          <th>Time</th><th>Action</th><th>Target</th><th>Status</th><th>Output</th>
+        </tr></thead><tbody></tbody></table>
+      </div>
+    </section>
+
+    <!-- ===================== CHAOS ===================== -->
+    <section class="page" id="p-chaos">
+      <div class="hero-h">Controlled fault injection</div>
+      <div class="hero-t">Chaos Lab</div>
+      <div class="hero-s">Real faults on the live ShopSmart site through the guarded agent — crash a container or inject resource load, and watch the Doctor detect and recover it. Whitelisted actions only.</div>
+      <div class="banner bad"><span class="ico">⚠</span><div><h2>These act on the real site</h2><p>Stopping the app or nginx takes the store down for everyone until the Doctor (or you) restarts it.</p></div></div>
+      <div class="grid g2">
+        <div class="card">
+          <div class="ch"><h3>Inject failure</h3><span class="r tag hi">500 / 502</span></div>
+          <div class="cap">Backend down → /health fails. Whole site down → nginx stops.</div>
+          <div class="grid g2" style="gap:12px">
+            <button class="btn danger" onclick="chaos('stop','shopsmart_app')">Stop backend (app)</button>
+            <button class="btn danger" onclick="chaos('stop','shopsmart_nginx')">Stop whole site (nginx)</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch"><h3>Recover</h3><span class="r tag resolved">restore</span></div>
+          <div class="cap">Bring a stopped component back online.</div>
+          <div class="grid g2" style="gap:12px">
+            <button class="btn go" onclick="chaos('restart','shopsmart_app')">Restart app</button>
+            <button class="btn go" onclick="chaos('restart','shopsmart_nginx')">Restart nginx</button>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="ch"><h3>Crash a dependency</h3><span class="r tag hi">500</span></div>
+        <div class="cap">Stop a backing service → the Doctor raises a <b>precise</b> incident (db_down / redis_down) and restarts exactly that container.</div>
+        <div class="grid g2" style="gap:12px">
+          <button class="btn danger" onclick="chaos('stop','shopsmart_postgres')">Stop database (postgres)</button>
+          <button class="btn danger" onclick="chaos('stop','shopsmart_redis')">Stop cache (redis)</button>
+          <button class="btn go" onclick="chaos('restart','shopsmart_postgres')">Restart database</button>
+          <button class="btn go" onclick="chaos('restart','shopsmart_redis')">Restart cache</button>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="ch"><h3>Inject resource load</h3><span class="r tag med">self-expires ~90s</span></div>
+        <div class="cap">The agent runs a bounded <span class="code">stress-ng</span> load so the Doctor sees a real resource incident. Memory → auto-restart app · CPU/disk → escalate. The load stops itself after ~90s.</div>
+        <div class="grid g3" style="gap:12px">
+          <button class="btn danger" onclick="chaos('inject','memory')">Memory pressure</button>
+          <button class="btn danger" onclick="chaos('inject','cpu')">CPU saturation</button>
+          <button class="btn danger" onclick="chaos('inject','disk')">Disk fill</button>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="ch"><h3>Result</h3><span class="r" id="blocks-info" style="font-size:12px"></span></div>
+        <div id="chaos-out" class="muted">No action run yet.</div>
+        <div style="margin-top:12px"><button class="btn go" onclick="chaos('unblock_all','all')">Clear IP blocks</button>
+          <span class="muted" style="font-size:12px;margin-left:8px">lifts any IP the Doctor blocked during a flood</span></div>
+        <div class="foot">Dry-run only logs the command on the agent; set <span class="code">AGENT_DRY_RUN=false</span> on the patient to act for real. Network attacks (k6 flood, Slowloris) run from your own machine — see <span class="code">attacks/README.md</span>.</div>
+      </div>
+    </section>
+
+    <!-- ===================== EVALUATION ===================== -->
+    <section class="page" id="p-evaluation">
+      <div class="hero-h">Controlled replay</div>
+      <div class="hero-t">Evidence over intuition.</div>
+      <div class="hero-s">Three diagnosis strategies replayed against the same incident set. Lower detection/recovery time and higher F1 is better — this is the research contribution.</div>
+      <div style="margin-bottom:16px"><span class="pill-note">● Illustrative benchmark · replace with your measured runs for the paper</span></div>
+      <div class="grid g3">
+        <div class="card eval-card"><div class="ch"><h3>Rule-based only</h3><span class="r vi" style="font-weight:800">F1 0.61</span></div>
+          <div class="row"><span style="min-width:72px">Detection</span><div class="track"><div class="fill" style="width:90%;background:#ef4444"></div></div><b>18.4s</b></div>
+          <div class="row"><span style="min-width:72px">Recovery</span><div class="track"><div class="fill" style="width:85%;background:#ef4444"></div></div><b>46.2s</b></div></div>
+        <div class="card eval-card"><div class="ch"><h3>LLM only</h3><span class="r vi" style="font-weight:800">F1 0.74</span></div>
+          <div class="row"><span style="min-width:72px">Detection</span><div class="track"><div class="fill" style="width:48%;background:#f59e0b"></div></div><b>9.8s</b></div>
+          <div class="row"><span style="min-width:72px">Recovery</span><div class="track"><div class="fill" style="width:52%;background:#f59e0b"></div></div><b>28.6s</b></div></div>
+        <div class="card eval-card" style="border-color:#134e4a"><div class="ch"><h3>LLM + RAG</h3><span class="r" style="font-weight:800;color:#5eead4">F1 0.91</span></div>
+          <div class="row"><span style="min-width:72px">Detection</span><div class="track"><div class="fill" style="width:26%;background:#22c55e"></div></div><b>5.2s</b></div>
+          <div class="row"><span style="min-width:72px">Recovery</span><div class="track"><div class="fill" style="width:30%;background:#22c55e"></div></div><b>16.4s</b></div></div>
+      </div>
+      <div class="card" style="margin-top:16px;padding:0">
+        <table class="nohover"><thead><tr><th>Approach</th><th>Detection (s)</th><th>Recovery (s)</th><th>F1 score</th></tr></thead>
+        <tbody>
+          <tr><td><b>Rule-based only</b></td><td>18.4</td><td>46.2</td><td>0.61</td></tr>
+          <tr><td><b>LLM only</b></td><td>9.8</td><td>28.6</td><td style="color:#fcd34d">0.74</td></tr>
+          <tr><td><b>LLM + RAG</b></td><td>5.2</td><td>16.4</td><td style="color:#5eead4;font-weight:800">0.91</td></tr>
+        </tbody></table>
+      </div>
+    </section>
+
+    <!-- ===================== ARCHITECTURE ===================== -->
+    <section class="page" id="p-architecture">
+      <div class="hero-h">System design</div>
+      <div class="hero-t">Three layers, least privilege.</div>
+      <div class="hero-s">How an incident flows from raw telemetry to a verified recovery — and why it's safe.</div>
+      <div class="grid g3">
+        <div class="card"><h3>👁 Watcher</h3><p class="muted">Polls the patient agent every few seconds for host metrics and probes the public site. Flags anomalies against learned baselines and thresholds.</p></div>
+        <div class="card"><h3>🩺 Doctor</h3><p class="muted">Three-tier diagnosis: deterministic rules → RAG over past incidents → LLM reasoning. Each diagnosis carries a tier, root cause, action and confidence.</p></div>
+        <div class="card"><h3>📣 Narrator</h3><p class="muted">This dashboard. Engineer sees telemetry, Founder sees live business impact, Executive sees the reliability scorecard.</p></div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="ch"><h3>Security posture</h3><span class="r muted" style="font-size:12px">least privilege is part of the design</span></div>
+        <div class="grid g3">
+          <div class="card" style="border-left:3px solid var(--violet)"><div class="diag"><div class="lbl">Agent access</div></div><b>Whitelisted commands only</b><p class="muted" style="margin:6px 0 0;font-size:12.5px">Agent runs only stop/start/restart on named containers. No arbitrary shell.</p></div>
+          <div class="card" style="border-left:3px solid var(--teal)"><div class="diag"><div class="lbl">Isolation</div></div><b>Patient ↔ Doctor separated</b><p class="muted" style="margin:6px 0 0;font-size:12.5px">Token on every call; port 8080 firewalled to the Doctor only.</p></div>
+          <div class="card" style="border-left:3px solid var(--amber)"><div class="diag"><div class="lbl">Actions</div></div><b>Reversible by default</b><p class="muted" style="margin:6px 0 0;font-size:12.5px">Risky cases escalate for human approval; auto-fix is capped per service.</p></div>
+        </div>
+        <div class="foot" id="arch-endpoint"></div>
+      </div>
+    </section>
+
     </div>
   </div>
-</header>
-
-<div class="wrap">
-  <nav>
-    <p class="lbl">Control plane</p>
-    <a class="active" data-view="operations"><span class="ic">◉</span> Operations</a>
-    <a data-view="evaluation"><span class="ic">◷</span> Evaluation</a>
-    <a data-view="architecture"><span class="ic">⊡</span> Architecture</a>
-    <div class="note"><b>Monitored patient</b><br/>ShopSmart is the live patient. The Doctor reads metrics and probes the site; remediation actions are guard-railed.</div>
-  </nav>
-
-  <main>
-    <!-- OPERATIONS -->
-    <section id="view-operations">
-      <div class="eyebrow">Live operations / patient: shopsmart</div>
-      <h2 class="hero">The Doctor is on call.</h2>
-      <p class="sub">One command center — from raw telemetry to a verified recovery action.</p>
-      <div class="btns">
-        <button class="btn" onclick="refreshAll()">↻ Refresh now</button>
-        <a class="btn primary" id="open-site" target="_blank">↗ Open ShopSmart</a>
-      </div>
-
-      <div class="grid cols-3">
-        <div class="card" data-role-hide="">
-          <div class="card-head"><div><h3>Baseline learning</h3><div class="cap">Isolation Forest rolling model</div></div>
-            <span class="pill" id="baseline-pill"><span class="dot amber"></span><span>Training</span></span></div>
-          <div class="big" id="baseline-days">— / 28 days</div>
-          <div class="cap">Collecting normal behaviour to set a stable baseline before anomaly scoring begins.</div>
-          <div class="bar"><i id="baseline-bar" style="width:0%"></i></div>
-          <div class="faint" id="baseline-sub">—</div>
-        </div>
-
-        <div class="card" data-role-hide="">
-          <div class="card-head"><div><h3>Post-deployment security scan</h3><div class="cap">Semgrep · AI-generated code</div></div>
-            <span class="pill"><span class="dot" style="background:var(--faint);box-shadow:none"></span><span>not wired</span></span></div>
-          <div class="placeholder">Not built yet — scans the repo for vulnerabilities after a deploy. Planned milestone.</div>
-        </div>
-
-        <div class="card">
-          <div class="card-head"><div><h3>Remediation policy</h3><div class="cap">Safety guardrails</div></div>
-            <span class="pill" id="policy-pill"><span class="dot"></span><span id="policy-mode">—</span></span></div>
-          <ul class="check">
-            <li>Allow-listed actions only (restart whitelisted container)</li>
-            <li id="policy-attempts">Max attempts then escalate</li>
-            <li>Human approval required for anything not auto-safe</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="grid cols-4" style="margin-top:16px">
-        <div class="card">
-          <div class="card-head"><div><h3>Patient status</h3><div class="cap">Public HTTP probe</div></div>
-            <span class="pill" id="site-pill"><span class="dot" id="site-dot"></span><span id="site-state">—</span></span></div>
-          <div class="big" id="site-head">—</div>
-          <div class="cap" id="site-check">—</div>
-          <div class="row">
-            <div><div class="k">Uptime</div><div class="v" id="site-uptime">—</div></div>
-            <div><div class="k">Latency</div><div class="v" id="site-latency">—</div></div>
-          </div>
-        </div>
-        <div class="card tile"><div class="k">CPU</div><div class="big" id="t-cpu">—</div><svg class="spark" id="sp-cpu"></svg></div>
-        <div class="card tile"><div class="k">Memory</div><div class="big" id="t-mem">—</div><svg class="spark" id="sp-mem"></svg></div>
-        <div class="card tile"><div class="k">Disk</div><div class="big" id="t-disk">—</div><svg class="spark" id="sp-disk"></svg></div>
-      </div>
-
-      <div class="grid" style="grid-template-columns:1.6fr 1fr;margin-top:16px" data-role-hide="">
-        <div class="card">
-          <div class="card-head"><div><h3>Telemetry</h3><div class="cap">Recent window · updates every 10s</div></div>
-            <span class="pill"><span class="dot"></span><span>live</span></span></div>
-          <div style="color:var(--muted);font-size:12.5px;margin-top:14px">CPU + memory %</div>
-          <svg class="chart" id="chart-sys"></svg>
-          <div style="color:var(--muted);font-size:12.5px;margin-top:10px">Site latency (ms)</div>
-          <svg class="chart" id="chart-lat" style="height:120px"></svg>
-          <div class="legend"><span><i style="background:var(--teal)"></i>CPU</span><span><i style="background:var(--amber)"></i>Memory</span><span><i style="background:var(--blue)"></i>Latency</span></div>
-        </div>
-        <div class="card">
-          <div class="card-head"><div><h3>Anomaly detection</h3><div class="cap">Isolation Forest · 28-day baseline</div></div></div>
-          <div class="placeholder" id="anomaly-ph" style="margin-top:14px">Baseline still collecting — anomaly scoring starts once 28 days are banked.</div>
-          <div class="section-t" style="margin:18px 0 0;font-size:13px">Diagnosis pipeline</div>
-          <div class="tier"><span class="n">01</span><div><b>Tier 1 · Rules engine</b><div class="faint">Threshold / deterministic match</div></div><span class="st on">ACTIVE</span></div>
-          <div class="tier"><span class="n">02</span><div><b>Tier 2 · ChromaDB RAG</b><div class="faint">Similar past incidents</div></div><span class="st" id="st-rag">PENDING</span></div>
-          <div class="tier"><span class="n">03</span><div><b>Tier 3 · LLM</b><div class="faint" id="llm-model">Groq / Llama</div></div><span class="st" id="st-llm">PENDING</span></div>
-        </div>
-      </div>
-
-      <div class="section-t">Incident timeline</div>
-      <div class="card" style="padding:8px 20px 20px">
-        <table><thead><tr><th>Time</th><th>Severity</th><th>Fault / root cause</th><th>Status</th><th>Action</th><th>TTR</th></tr></thead>
-        <tbody id="incidents"><tr><td colspan="6" class="muted" style="padding:20px">No incidents yet.</td></tr></tbody></table>
-      </div>
-
-      <div data-role-hide="">
-        <div class="section-t">Remediation actions</div>
-        <div class="card" style="padding:8px 20px 20px">
-          <table><thead><tr><th>Time</th><th>Action</th><th>Target</th><th>Status</th><th>Result</th></tr></thead>
-          <tbody id="actions"><tr><td colspan="5" class="muted" style="padding:20px">No actions yet.</td></tr></tbody></table>
-        </div>
-      </div>
-
-      <div data-role-hide="">
-        <div class="section-t">Chaos Lab</div>
-        <div class="card">
-          <div class="cap">Inject or clear a real outage on the live site. These act on the actual patient containers.</div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 6px">
-            <button class="btn" style="border-color:#4a2020;color:#ef6a6a" onclick="chaos('stop','shopsmart_app')">⏻ Stop backend (app)</button>
-            <button class="btn" style="border-color:#4a2020;color:#ef6a6a" onclick="chaos('stop','shopsmart_nginx')">⏻ Stop whole site (nginx)</button>
-            <button class="btn" onclick="chaos('restart','shopsmart_app')">↻ Restart app</button>
-            <button class="btn" onclick="chaos('restart','shopsmart_nginx')">↻ Restart nginx</button>
-          </div>
-          <div class="faint" id="chaos-result" style="margin-bottom:10px">Stopping the backend fails /health (dashboard shows down, homepage still static). Stopping nginx takes the whole site offline for everyone.</div>
-          <div class="chaos">
-            <div class="c"><b>Crash Redis</b><p>Redis unavailable</p></div>
-            <div class="c"><b>Database slow</b><p>Query latency</p></div>
-            <div class="c"><b>Memory leak</b><p>Heap growth</p></div>
-            <div class="c"><b>Traffic spike</b><p>Request saturation</p></div>
-            <div class="c"><b>Bad deployment</b><p>Elevated 5xx</p></div>
-            <div class="c"><b>Reset</b><p>Return to normal</p></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="section-t">Business impact</div>
-      <div class="card">
-        <div class="cap">Estimated downtime exposure — editable assumptions.</div>
-        <div class="grid cols-3" style="margin-top:14px">
-          <div><div class="lbl2">Orders / minute</div><input class="num" id="bi-orders" type="number" value="12" oninput="calcBI()"></div>
-          <div><div class="lbl2">Average order value (₹)</div><input class="num" id="bi-aov" type="number" value="1500" oninput="calcBI()"></div>
-          <div><div class="lbl2">Manual recovery (minutes)</div><input class="num" id="bi-manual" type="number" value="25" oninput="calcBI()"></div>
-        </div>
-        <div class="big" id="bi-out" style="margin-top:18px">₹—</div>
-        <div class="faint">Estimated revenue at risk per minute of downtime.</div>
-      </div>
-    </section>
-
-    <!-- EVALUATION -->
-    <section id="view-evaluation" class="hide">
-      <div class="eyebrow">Evaluation / controlled replay</div>
-      <h2 class="hero">Evidence over intuition.</h2>
-      <p class="sub">Three diagnosis strategies replayed on the same incident set. This page stays empty until real benchmark runs exist — no illustrative numbers.</p>
-      <div class="card" style="margin-top:12px"><div class="placeholder">No benchmark results yet. Rules-only vs LLM-only vs LLM+RAG comparison appears here once the diagnosis layers are built and evaluated.</div></div>
-    </section>
-
-    <!-- ARCHITECTURE -->
-    <section id="view-architecture" class="hide">
-      <div class="eyebrow">Architecture</div>
-      <h2 class="hero">How the Doctor works.</h2>
-      <div class="grid cols-3" style="margin-top:12px">
-        <div class="card"><h3>1 · Observe</h3><div class="cap" style="margin-top:8px">Polls the patient agent's metrics API and probes the public site every 10s.</div></div>
-        <div class="card"><h3>2 · Detect</h3><div class="cap" style="margin-top:8px">Rules-first thresholds now; Isolation Forest anomaly scoring once the baseline matures.</div></div>
-        <div class="card"><h3>3 · Diagnose</h3><div class="cap" style="margin-top:8px">Rules → RAG (ChromaDB) → LLM (Groq). Tiers 2–3 pending.</div></div>
-        <div class="card"><h3>4 · Act</h3><div class="cap" style="margin-top:8px">Auto-restart safe, reversible actions; escalate the rest with a summary.</div></div>
-        <div class="card"><h3>5 · Verify</h3><div class="cap" style="margin-top:8px">Fresh probes confirm recovery before an incident is closed.</div></div>
-        <div class="card"><h3>Patient endpoint</h3><div class="cap" style="margin-top:8px" id="arch-endpoint">—</div></div>
-      </div>
-      <div class="section-t">Security posture</div>
-      <div class="grid cols-3">
-        <div class="card"><b>Action scope</b><div class="faint" style="margin-top:6px">allow-listed only</div></div>
-        <div class="card"><b>VM isolation</b><div class="faint" style="margin-top:6px">patient on a separate account</div></div>
-        <div class="card"><b>Actions</b><div class="faint" style="margin-top:6px">reversible by default</div></div>
-      </div>
-    </section>
-  </main>
 </div>
 
-<div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
-  <div class="modal" id="modal"></div>
+<!-- incident modal -->
+<div class="ov" id="ov" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <button class="x" onclick="closeModal()">✕</button>
+    <h2 id="m-title" style="margin:0 6px 0 0">Incident</h2>
+    <div class="kv" id="m-kv"></div>
+    <div id="m-diag"></div>
+  </div>
 </div>
 
 <script>
-const $ = s => document.querySelector(s);
+const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+let ROLE='engineer', TAB='overview';
 
-async function openIncident(id){
-  try{
-    const r = await j("/incidents/"+id); const i=r.incident; const acts=r.actions||[];
-    const conf = i.diag_confidence!=null ? Math.round(i.diag_confidence*100)+"%" : "—";
-    const ev = (i.evidence||[]).map(e=>`<div class="ev">⚑ ${e}</div>`).join("") || '<div class="faint">none</div>';
-    const actRows = acts.length ? acts.map(a=>`<div class="ev"><b>${a.type} ${a.target}</b> — ${a.success===1?'done':a.status} <span class="faint mono">${(a.output||'').slice(0,90)}</span></div>`).join("") : '<div class="faint">no actions taken</div>';
-    $("#modal").innerHTML = `
-      <span class="x" onclick="closeModal()">✕</span>
-      <div class="eyebrow">Incident #${i.id}</div>
-      <h2 style="font-size:24px;margin:6px 0 2px">${i.type.replace(/_/g,' ')}</h2>
-      <div class="muted">${i.summary||''}</div>
-      <div class="kv">
-        <div class="k">Severity</div><div><span class="tag ${i.severity}">${i.severity}</span> ${i.escalated?'<span class="tag escalated">escalated</span>':''}</div>
-        <div class="k">Status</div><div><span class="tag ${i.status}">${i.status}</span> ${i.resolution?('· '+i.resolution):''}</div>
-        <div class="k">Started</div><div>${fmtTime(i.started_at)}</div>
-        <div class="k">Resolved</div><div>${i.resolved_at?fmtTime(i.resolved_at):'—'}</div>
-        <div class="k">Time to recover</div><div>${i.duration_seconds!=null?i.duration_seconds+'s':'—'}</div>
-      </div>
-      <div class="section-t" style="margin:20px 0 4px">Diagnosis</div>
-      <div class="kv">
-        <div class="k">Tier</div><div><b style="color:var(--teal)">${i.diag_tier||'—'}</b></div>
-        <div class="k">Confidence</div><div>${conf}</div>
-        <div class="k">Root cause</div><div>${i.diag_root_cause||'—'}</div>
-        <div class="k">Recommended fix</div><div>${i.diag_action||'—'}</div>
-      </div>
-      <div class="section-t" style="margin:20px 0 4px">RAG evidence · similar past incidents</div>
-      ${ev}
-      <div class="section-t" style="margin:20px 0 4px">Remediation actions</div>
-      ${actRows}`;
-    $("#overlay").classList.add("show");
-  }catch(e){ console.error("openIncident", e); }
+/* role + nav */
+function applyRole(){
+  $$('.rolepage').forEach(el=>el.style.display='none');
+  const el=$('#ov-'+ROLE); if(el) el.style.display='';
+  // recovery trend shown for engineer + executive only
+  $('#trend-card').style.display = ROLE==='founder' ? 'none':'';
 }
-function closeModal(){ $("#overlay").classList.remove("show"); }
+$('#role').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  ROLE=b.dataset.role;$$('#role button').forEach(x=>x.classList.toggle('on',x===b));applyRole();refreshLive();});
+function go(tab){TAB=tab;$$('.nav').forEach(x=>x.classList.toggle('on',x.dataset.tab===tab));
+  $$('.page').forEach(p=>p.classList.toggle('on',p.id==='p-'+tab));window.scrollTo(0,0);}
+$$('.nav').forEach(n=>n.addEventListener('click',()=>go(n.dataset.tab)));
 
-async function chaos(action, target){
-  const label = action+" "+target.replace("shopsmart_","");
-  if(!confirm(`${label}?\nThis affects the LIVE site.`)) return;
-  const el = $("#chaos-result"); el.textContent = `${label}…`;
-  try{
-    const r = await fetch(`/chaos?action=${action}&target=${target}`, {method:'POST'});
-    const d = await r.json();
-    el.textContent = `${label}: ${d.success?'OK':'failed'} — ${d.output||''}`;
-    el.style.color = d.success ? 'var(--teal)' : 'var(--red)';
-    setTimeout(refreshAll, 1500);
-  }catch(e){ el.textContent = `${label}: error — ${e}`; el.style.color='var(--red)'; }
-}
-document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
-const fmtTime = iso => { try{return new Date(iso).toLocaleTimeString()}catch(e){return "—"} };
-let SITE_URL = "https://shopsmart-aisre.duckdns.org";
+/* helpers */
+const fmtMoney=n=>'₹'+(Number(n)||0).toLocaleString('en-IN',{maximumFractionDigits:0});
+function fmtMoneyShort(n){n=Number(n)||0;if(n>=1e7)return'₹'+(n/1e7).toFixed(2)+'Cr';if(n>=1e5)return'₹'+(n/1e5).toFixed(2)+'L';if(n>=1e3)return'₹'+(n/1e3).toFixed(1)+'k';return'₹'+Math.round(n);}
+const ago=ts=>{if(!ts)return'—';const d=(Date.now()-new Date(ts).getTime())/1000;
+  if(d<60)return Math.round(d)+'s ago';if(d<3600)return Math.round(d/60)+'m ago';
+  if(d<86400)return Math.round(d/3600)+'h ago';return Math.round(d/86400)+'d ago';};
+const clockt=ts=>{if(!ts)return'—';const d=new Date(ts);return d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});};
+const cls=(v,w,b)=>v>=b?'bad':v>=w?'warn':'ok';
+function tierTag(t){const n=(t||'').toString();
+  if(/3|llm/i.test(n)&&!/rag/i.test(n))return'<span class="tag t3">LLM</span>';
+  if(/2|rag/i.test(n))return'<span class="tag t2">RAG</span>';
+  if(/1|rule/i.test(n))return'<span class="tag t1">Rules</span>';return t?'<span class="tag t1">'+n+'</span>':'—';}
+function statusTag(s){s=(s||'').toLowerCase();const k=s==='open'?'open':s==='escalated'?'escalated':'resolved';return'<span class="tag '+k+'">'+(s||'—')+'</span>';}
+function actTag(s){s=(s||'').toLowerCase();const k=s.includes('done')||s.includes('success')?'done':s.includes('pending')?'pending':s.includes('fail')?'failed':'pending';return'<span class="tag '+k+'">'+(s||'—')+'</span>';}
+function httpFor(t){t=(t||'').toLowerCase();if(/429|traffic|spike|ddos|attack/.test(t))return['429','e4'];if(/502|gateway|partition|nginx|config/.test(t))return['502','e5'];if(/down|crash|deploy|memory|cpu|redis|db|leak/.test(t))return['500','e5'];return['200','e2'];}
+async function getJSON(u){try{const r=await fetch(u);return r.ok?await r.json():null;}catch(e){return null;}}
 
-async function j(u){ const r = await fetch(u); if(!r.ok) throw new Error(u+" "+r.status); return r.json(); }
+/* line chart (multi-series) */
+function lineChart(id,series){const c=$(id);if(!c)return;const dpr=2;const w=c.width=c.clientWidth*dpr,h=c.height=(c.getAttribute('height')||150)*dpr;const g=c.getContext('2d');g.clearRect(0,0,w,h);const pad=10*dpr;let max=1;series.forEach(s=>s.data.forEach(v=>max=Math.max(max,v)));max=Math.ceil(max/20)*20||100;
+  // gridlines
+  g.strokeStyle='rgba(255,255,255,.05)';g.lineWidth=1;for(let i=0;i<=4;i++){const y=pad+(h-2*pad)*i/4;g.beginPath();g.moveTo(pad,y);g.lineTo(w-pad,y);g.stroke();}
+  series.forEach(s=>{if(!s.data.length)return;g.strokeStyle=s.color;g.lineWidth=2.5*dpr;g.beginPath();s.data.forEach((v,i)=>{const x=pad+i*(w-2*pad)/Math.max(s.data.length-1,1);const y=h-pad-(v/max)*(h-2*pad);i?g.lineTo(x,y):g.moveTo(x,y);});g.stroke();});}
 
-// ---- simple SVG charts (no deps) ----
-function poly(values, w, h, color, min, max){
-  if(!values.length) return "";
-  const lo = (min!=null?min:Math.min(...values)), hi=(max!=null?max:Math.max(...values));
-  const span = (hi-lo)||1;
-  const step = w/Math.max(values.length-1,1);
-  const pts = values.map((v,i)=>`${(i*step).toFixed(1)},${(h-((v-lo)/span)*h).toFixed(1)}`).join(" ");
-  return `<polyline fill="none" stroke="${color}" stroke-width="2" points="${pts}"/>`;
-}
-function spark(id, values, color){
-  const el=$(id); if(!el) return; const w=el.clientWidth||200,h=34;
-  el.innerHTML = poly(values,w,h,color,0,Math.max(100,Math.max(...values,1)));
-}
-function sysChart(cpu, mem){
-  const el=$("#chart-sys"); const w=el.clientWidth||600,h=170;
-  el.innerHTML = poly(cpu,w,h,"#2fd3a6",0,100)+poly(mem,w,h,"#f3b14e",0,100);
-}
-function latChart(lat){
-  const el=$("#chart-lat"); const w=el.clientWidth||600,h=120;
-  el.innerHTML = poly(lat,w,h,"#5aa0f0",0,null);
-}
+/* ===== loaders ===== */
+async function loadHealth(){const h=await getJSON('/health');if(!h)return;
+  const m=h.llm_enabled?('Groq · '+(h.llm_model||'on')):'LLM off';
+  $('#pipe-model').textContent=m+' · RAG '+(h.rag_enabled?'on':'off');
+  $('#pipe3').textContent=h.llm_enabled?'ready':'disabled';
+  $('#pipe2').textContent=h.rag_enabled?'ready':'disabled';
+  $('#side-foot').textContent='Monitoring every '+(h.poll_interval||10)+'s · auto-heal '+(h.auto_remediate?'on':'off');}
 
-function calcBI(){
-  const o=+$("#bi-orders").value||0, a=+$("#bi-aov").value||0;
-  $("#bi-out").textContent = "₹"+(o*a).toLocaleString('en-IN');
-}
+async function loadStatus(){const s=await getJSON('/status');const dot=$('#live-dot'),txt=$('#live-text');
+  $('#sync').textContent='Last sync '+new Date().toLocaleTimeString();
+  if(!s){dot.className='dot off';txt.textContent='Doctor offline';return;}
+  const p=(s.patients&&s.patients[0])||{},m=p.latest||{};const up=m&&Object.keys(m).length;
+  const openInc=s.open_incidents||[];
+  const siteDown=openInc.some(i=>/(site_down|app_down|nginx_down|db_down|redis_down)/i.test(i.type||''));
+  const degraded=!siteDown && openInc.length>0;
+  dot.className='dot'+(!up||siteDown?' off':degraded?' warn':'');
+  txt.textContent=!up?'Patient unreachable':siteDown?'Incident in progress':degraded?('Degraded — '+(openInc[0].type||'incident')):'Doctor online';
+  // engineer KPI: system status (reflects ANY open incident, not just outages)
+  const kst=$('#k-status');
+  kst.textContent=!up?'DOWN':siteDown?'DOWN':degraded?'DEGRADED':'HEALTHY';
+  kst.className='v '+(!up||siteDown?'bad':degraded?'warn':'ok');
+  $('#k-status-s').textContent=!up?'no probe':siteDown?'outage in progress':degraded?(openInc.length+' active incident'+(openInc.length>1?'s':'')):('checked '+ago(m.ts));
+  // telemetry gauges via samples handled in loadSamples; keep latest for diag context
+  window.__latest=m;window.__open=openInc;}
 
-async function refreshAll(){
-  $("#sync").textContent = "Last sync "+new Date().toLocaleTimeString();
-  try{
-    const health = await j("/health");
-    $("#doctor-dot").className="dot"; $("#doctor-text").textContent="Doctor online";
-    $("#policy-mode").textContent = health.auto_remediate ? "auto + escalate" : "recommend only";
-    $("#open-site").href = SITE_URL;
-    $("#arch-endpoint").textContent = SITE_URL.replace("https://","")+" · HTTPS";
-    // Diagnosis pipeline tiers reflect real config
-    const setTier=(id,on,onTxt)=>{const e=$(id);e.textContent=on?onTxt:"PENDING";e.className="st"+(on?" on":"");};
-    setTier("#st-rag", health.rag_enabled, "READY");
-    setTier("#st-llm", health.llm_enabled, "ACTIVE");
-    if(health.llm_model) $("#llm-model").textContent = "Groq · "+health.llm_model;
-  }catch(e){ $("#doctor-dot").className="dot red"; $("#doctor-text").textContent="Doctor offline"; }
+async function loadSamples(){const d=await getJSON('/samples/recent?minutes=15');const rows=((d&&d.samples)||[]).slice().reverse();
+  const cpu=rows.map(r=>+r.cpu_percent).filter(v=>!isNaN(v));
+  const mem=rows.map(r=>+r.memory_percent).filter(v=>!isNaN(v));
+  const disk=rows.map(r=>+r.disk_percent).filter(v=>!isNaN(v));
+  lineChart('#chart-util',[{data:cpu,color:'#2dd4bf'},{data:mem,color:'#3b82f6'},{data:disk,color:'#f59e0b'}]);}
 
-  // baseline
-  try{
-    const b=(await j("/baseline")); const p=b.baseline[0]||{}; const t=b.target_days||28;
-    const d = p.days!=null ? p.days : 0;
-    $("#baseline-days").textContent = d.toFixed(1)+" / "+t+" days";
-    $("#baseline-bar").style.width = Math.min(100,(d/t)*100)+"%";
-    $("#baseline-sub").textContent = (p.sample_count!=null? p.sample_count.toLocaleString()+" samples collected":"—");
-    const ready = d>=t;
-    $("#baseline-pill").innerHTML = ready?'<span class="dot"></span><span>Ready</span>':'<span class="dot amber"></span><span>Training</span>';
-    if(ready) $("#anomaly-ph").textContent = "Baseline ready — anomaly scoring can be enabled.";
-  }catch(e){}
+async function loadScorecard(){const sc=await getJSON('/scorecard');if(!sc)return;window.__sc=sc;
+  // engineer KPIs
+  $('#k-mttr').textContent=sc.avg_recovery_seconds!=null?sc.avg_recovery_seconds+'s':'—';
+  $('#k-success').textContent=Math.round(sc.success_rate*100)+'%';
+  $('#k-success-s').textContent=sc.auto_resolved+' auto-healed';
+  $('#k-total').textContent=sc.total_incidents;
+  $('#k-total-s').textContent=sc.auto_resolved+' auto-recovered';
+  // executive
+  $('#x-protected').textContent=fmtMoneyShort(sc.revenue_protected_estimate);
+  $('#x-uptime').textContent=sc.uptime_pct.toFixed(2)+'%';
+  $('#x-uptime-s').innerHTML='SLA 99.9% '+(sc.uptime_pct>=99.9?'✓':'<span style="color:#fca5a5">✗</span>');
+  $('#x-baseline').textContent=sc.manual_mttr_minutes;
+  const off=339*(1-Math.min(sc.uptime_pct,100)/100);$('#x-ring').setAttribute('stroke-dashoffset',off.toFixed(1));
+  $('#x-auto').textContent=sc.auto_resolved+' / '+sc.total_incidents;
+  $('#x-auto-s').textContent=sc.auto_resolved_pct+'% no human';
+  $('#x-avg').textContent=sc.avg_recovery_seconds!=null?sc.avg_recovery_seconds+'s':'—';
+  $('#x-grade').textContent=sc.grade;
+  $('#x-esc').textContent=sc.escalated;}
 
-  // status + tiles
-  try{
-    const s = await j("/status"); const p=(s.patients[0]||{}).latest||{};
-    const up = p.site_up===1;
-    $("#site-dot").className = "dot"+(up?"":" red");
-    $("#site-state").textContent = up?"UP":"DOWN";
-    $("#site-head").textContent = up?"Operating normally":"Outage detected";
-    $("#site-check").textContent = "Checked "+fmtTime(p.ts)+" · HTTP "+(p.site_status??"—");
-    $("#site-latency").textContent = p.site_latency_ms!=null? Math.round(p.site_latency_ms)+" ms":"—";
-    $("#t-cpu").textContent = p.cpu_percent!=null? p.cpu_percent+"%":"—";
-    $("#t-mem").textContent = p.memory_percent!=null? p.memory_percent+"%":"—";
-    $("#t-disk").textContent = p.disk_percent!=null? p.disk_percent+"%":"—";
-  }catch(e){}
+const TRAF={rps:[],rl:[],er:[]};
+async function loadTraffic(){const d=await getJSON('/traffic');const t=(d&&d.traffic)||{};
+  const cap=$('#traffic-cap');
+  if(!t.available){ cap.textContent='nginx log not wired yet'; return; }
+  cap.textContent='requests/sec · live from nginx';
+  TRAF.rps.push(+t.requests_per_sec||0); TRAF.rl.push((+t.rate_limited_rate||0)*100); TRAF.er.push((+t.error_rate||0)*100);
+  for(const k in TRAF){ if(TRAF[k].length>40) TRAF[k].shift(); }
+  // scale 429%/5xx% onto the RPS axis so all three read on one chart
+  const maxRps=Math.max(...TRAF.rps,1);
+  const rlScaled=TRAF.rl.map(v=>v/100*maxRps), erScaled=TRAF.er.map(v=>v/100*maxRps);
+  lineChart('#chart-traffic',[{data:TRAF.rps,color:'#2dd4bf'},{data:rlScaled,color:'#f59e0b'},{data:erScaled,color:'#ef4444'}]);
+  const top=t.top_ip?(' · top source <b>'+t.top_ip+'</b> ('+t.top_ip_count+' reqs)'):'';
+  $('#traffic-stat').innerHTML='Now: <b>'+t.requests_per_sec+'</b> req/s · <b>'+Math.round(t.rate_limited_rate*100)+'%</b> rate-limited (429) · <b>'+Math.round(t.error_rate*100)+'%</b> errors'+top;}
 
-  // telemetry history
-  try{
-    const r = await j("/samples/recent?minutes=30");
-    const rows = r.samples.slice().reverse().slice(-60);
-    const cpu=rows.map(x=>x.cpu_percent??0), mem=rows.map(x=>x.memory_percent??0),
-          disk=rows.map(x=>x.disk_percent??0), lat=rows.map(x=>x.site_latency_ms??0);
-    const up=rows.filter(x=>x.site_up===1).length;
-    $("#site-uptime").textContent = rows.length? Math.round(up/rows.length*100)+"%":"—";
-    sysChart(cpu,mem); latChart(lat);
-    spark("#sp-cpu",cpu,"#2fd3a6"); spark("#sp-mem",mem,"#f3b14e"); spark("#sp-disk",disk,"#5aa0f0");
-  }catch(e){}
+async function loadBlocks(){const d=await getJSON('/blocks');const b=(d&&d.blocks)||{};const ips=Object.keys(b);
+  const el=$('#blocks-info');if(!el)return;
+  el.innerHTML = ips.length ? '<span class="tag failed">blocking '+ips.length+' IP'+(ips.length>1?'s':'')+'</span> '+ips.map(ip=>ip+' ('+b[ip]+'s)').join(', ') : '';}
 
-  // incidents + actions
-  try{
-    const inc=(await j("/incidents?limit=30")).incidents;
-    const acts=(await j("/actions?limit=50")).actions;
-    const byInc={}; acts.forEach(a=>{ (byInc[a.incident_id]=byInc[a.incident_id]||[]).push(a); });
-    const tb=$("#incidents");
-    if(!inc.length){ tb.innerHTML='<tr><td colspan="6" class="muted" style="padding:20px">No incidents yet.</td></tr>'; }
-    else tb.innerHTML = inc.map(i=>{
-      const st = i.escalated? "escalated" : i.status;
-      const a=(byInc[i.id]||[]);
-      const act = a.length? (a[a.length-1].type+" "+a[a.length-1].target):"—";
-      const ttr = i.duration_seconds!=null? i.duration_seconds+"s":"—";
-      const diag = i.diag_root_cause ? `<div style="margin-top:7px;color:var(--teal);font-size:12px">⚕ ${i.diag_root_cause}</div>
-        <div class="faint" style="font-size:11.5px">→ ${i.diag_action||''} ${i.diag_tier?'· <b>'+i.diag_tier+'</b>':''}</div>` : '';
-      return `<tr onclick="openIncident(${i.id})" title="Click for full diagnosis"><td>${fmtTime(i.started_at)}</td>
-        <td><span class="tag ${i.severity}">${i.severity}</span></td>
-        <td><b>${i.type.replace(/_/g,' ')}</b><div class="faint">${(i.summary||'').slice(0,90)}</div>${diag}</td>
-        <td><span class="tag ${st}">${st}</span></td>
-        <td class="muted">${act}</td><td>${ttr}</td></tr>`;
-    }).join("");
+async function loadBusiness(){const b=await getJSON('/business');const bn=$('#founder-banner');if(!b)return;
+  if(!b.reachable){bn.innerHTML='<div class="banner bad"><span class="ico">⚠</span><div><h2>Store is not responding</h2><p>Revenue is at risk right now — the Doctor is working to restore it.</p></div><div class="rt"><div class="dim" style="font-size:11px">AT RISK</div><div style="font-size:22px;font-weight:800;color:#fca5a5" id="f-risk2">'+fmtMoney(b.revenue_per_min)+'/min</div></div></div>';
+  }else{bn.innerHTML='<div class="banner ok"><span class="ico">🟢</span><div><h2>ShopSmart is online</h2><p>Serving customers normally · '+b.active_sessions+' shoppers on site.</p></div></div>';}
+  $('#f-rev').textContent=fmtMoney(b.revenue_today);$('#f-orders').textContent=b.order_count+' orders today';
+  $('#f-risk').textContent=fmtMoney(b.revenue_per_min);
+  $('#f-sess').textContent=b.active_sessions;$('#f-check').textContent=b.active_checkouts+' in checkout';
+  $('#f-aov').textContent=fmtMoney(b.average_order_value);$('#f-conv').textContent=(b.conversion_rate||0).toFixed(1)+'% conversion';}
 
-    const ab=$("#actions");
-    if(!acts.length){ ab.innerHTML='<tr><td colspan="5" class="muted" style="padding:20px">No actions yet.</td></tr>'; }
-    else ab.innerHTML = acts.slice(0,20).map(a=>{
-      const ok = a.success===1? '<span class="tag resolved">done</span>' : (a.status==='pending_approval'? '<span class="tag high">needs approval</span>':'<span class="tag open">failed</span>');
-      return `<tr><td>${fmtTime(a.created_at)}</td><td><b>${a.type}</b></td><td class="muted">${a.target}</td><td>${ok}</td><td class="muted mono">${(a.output||'').slice(0,80)}</td></tr>`;
-    }).join("");
-  }catch(e){}
-}
+async function loadServicemap(){const d=await getJSON('/servicemap');const host=$('#svcmap');if(!d){host.innerHTML='';return;}
+  const dotc={up:'#22c55e',down:'#ef4444',unknown:'#5b688a'};
+  host.innerHTML=d.components.map(c=>'<div class="svc"><div><div class="nm">'+c.name+'</div><div class="rl">'+c.role+'</div></div><div class="st" style="color:'+dotc[c.status]+'"><span class="dot" style="background:'+dotc[c.status]+';box-shadow:none"></span>'+c.status.toUpperCase()+'</div></div>').join('');}
 
-// nav + roles
-document.querySelectorAll('nav a').forEach(a=>a.onclick=()=>{
-  document.querySelectorAll('nav a').forEach(x=>x.classList.remove('active')); a.classList.add('active');
-  ['operations','evaluation','architecture'].forEach(v=>$("#view-"+v).classList.toggle('hide', v!==a.dataset.view));
-});
-document.querySelectorAll('#roles button').forEach(b=>b.onclick=()=>{
-  document.querySelectorAll('#roles button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
-  const eng = b.dataset.role==='engineer';
-  document.querySelectorAll('[data-role-hide]').forEach(el=>el.classList.toggle('hide', !eng));
-});
+function diagHTML(i){if(!i)return'<div class="empty">No active incident — the Doctor is standing by.</div>';
+  const conf=i.diag_confidence!=null?Math.round(i.diag_confidence*100)+'%':'—';
+  let evi='';try{const e=i.evidence||JSON.parse(i.diag_evidence||'[]');if(e.length)evi='<div class="blk"><div class="lbl">Evidence</div>'+e.map(x=>'<div class="evi">'+(typeof x==='string'?x:JSON.stringify(x))+'</div>').join('')+'</div>';}catch(_){}
+  return '<div class="blk root"><div class="lbl">Root cause · '+ (i.type||'') +'</div>'+(i.diag_root_cause||'diagnosing…')+'</div>'+
+    '<div class="grid g2" style="margin-top:11px"><div class="blk"><div class="lbl">Strategy</div><b>'+(i.diag_action||'review')+'</b></div>'+
+    '<div class="blk"><div class="lbl">Confidence</div><b style="color:#5eead4">'+conf+'</b> · '+tierTag(i.diag_tier)+'</div></div>'+evi+
+    (i.status==='resolved'?'<div class="blk act"><div class="lbl">Action taken</div>✅ '+(i.resolution||'recovered')+(i.duration_seconds!=null?' · MTTR '+i.duration_seconds+'s':'')+'</div>':
+      (i.escalated?'<div class="blk hum"><div class="lbl">Human required</div>⚠ Escalated for approval — '+(i.diag_action||'manual action')+'</div>':
+       '<div class="blk act"><div class="lbl">Status</div>🔧 Remediation in progress…</div>'));}
 
-calcBI(); refreshAll(); setInterval(refreshAll, 10000);
+async function loadDiagnosis(){const d=await getJSON('/incidents?limit=5');const list=(d&&d.incidents)||[];
+  const open=list.find(i=>i.status==='open');const latest=open||list[0];
+  // enrich evidence via detail if available
+  let full=latest;if(latest){const det=await getJSON('/incidents/'+latest.id);if(det&&det.incident)full=det.incident;}
+  $('#diag-body').innerHTML=diagHTML(full);
+  $('#diag-status').innerHTML=open?'<span class="tag open">active</span>':(latest?'<span class="tag resolved">last incident</span>':'<span class="tag resolved">standing by</span>');
+  // founder plain-language
+  $('#fdiag-body').innerHTML=full?diagHTML(full):'<div class="empty">All clear — no incident in progress.</div>';}
+
+function tlDot(kind){return{detect:'#ef4444',diagnose:'#a78bfa',action:'#3b82f6',recover:'#22c55e',resolve:'#22c55e',escalate:'#f59e0b'}[kind]||'#5b688a';}
+async function loadTimeline(){const d=await getJSON('/timeline?limit=12');let ev=(d&&d.events)||[];
+  const open=(window.__open||[]).length;
+  let html='';
+  if(!open)html+='<div class="tl"><span class="tm">now</span><span class="bd" style="background:#22c55e"></span><div>System healthy — all services operational</div></div>';
+  html+=ev.map(e=>'<div class="tl"><span class="tm">'+clockt(e.at)+'</span><span class="bd" style="background:'+tlDot(e.kind)+'"></span><div>'+e.text+'</div></div>').join('');
+  if(!ev.length&&!open)html='<div class="empty">No events yet.</div>';
+  $('#timeline').innerHTML=html;$('#ftimeline').innerHTML=html;}
+
+async function loadTrend(){const d=await getJSON('/incidents?limit=10');const list=((d&&d.incidents)||[]).filter(i=>i.duration_seconds!=null).slice(0,8).reverse();
+  const host=$('#trend-bars');if(!list.length){host.innerHTML='<div class="empty" style="width:100%">No recovered incidents yet.</div>';}
+  else{const max=Math.max(...list.map(i=>i.duration_seconds),1);
+    host.innerHTML=list.map(i=>{const h=Math.max(6,i.duration_seconds/max*120);const esc=i.escalated;
+      return '<div class="bar"><div class="vl">'+i.duration_seconds+'s</div><div class="col" style="height:'+h+'px;background:'+(esc?'#ef4444':'#8b5cf6')+'"></div><div class="lb">'+(i.type||'').slice(0,8)+'</div></div>';}).join('');}
+  // executive mini trend line
+  const xc=$('#x-trend');if(xc){const data=list.map(i=>i.duration_seconds);lineChart('#x-trend',[{data,color:'#a78bfa'}]);}
+  // protected subtitle
+  const sc=window.__sc;if(sc)$('#x-protected-s').textContent='Across '+sc.resolved+' incidents the AI recovered — '+sc.auto_resolved+' with no human.';}
+
+async function loadIncidentsTable(){const d=await getJSON('/incidents?limit=200');const list=(d&&d.incidents)||[];
+  $('#tbl-inc tbody').innerHTML=list.length?list.map(i=>{const[code,hc]=httpFor(i.type);
+    return '<tr onclick="openIncident('+i.id+')"><td>'+clockt(i.started_at)+'</td><td class="code">'+(i.type||'—')+'</td>'+
+    '<td><span class="http '+hc+'">'+code+'</span></td><td><span class="tag '+(i.escalated?'escalated':'t1')+'">'+(i.diag_action||(i.escalated?'escalate':'—'))+'</span></td>'+
+    '<td>'+tierTag(i.diag_tier)+'</td><td><span class="tag '+((i.severity||'')==='high'||(i.severity||'')==='critical'?'hi':'med')+'">'+(i.severity||'—')+'</span></td>'+
+    '<td>'+(i.duration_seconds!=null?i.duration_seconds+'s':'—')+'</td><td>'+statusTag(i.escalated?'escalated':i.status)+'</td></tr>';}).join('')
+    :'<tr class="nohover"><td colspan="8" class="empty">No incidents recorded yet.</td></tr>';
+  const a=await getJSON('/actions?limit=100');const al=(a&&a.actions)||[];
+  $('#tbl-act tbody').innerHTML=al.length?al.map(x=>'<tr><td>'+clockt(x.created_at)+'</td><td>'+(x.type||'—')+'</td><td>'+(x.target||'—')+'</td><td>'+actTag(x.status)+'</td><td class="muted code">'+(x.output||'—')+'</td></tr>').join('')
+    :'<tr><td colspan="5" class="empty">No remediation actions yet.</td></tr>';}
+
+/* modal */
+const kv=(k,v)=>'<div class="k">'+k+'</div><div>'+(v==null||v===''?'—':v)+'</div>';
+async function openIncident(id){const d=await getJSON('/incidents/'+id);if(!d)return;const i=d.incident||{};
+  $('#m-title').textContent='Incident #'+id+' · '+(i.type||'');
+  $('#m-kv').innerHTML=kv('Patient',i.patient)+kv('Status',statusTag(i.escalated?'escalated':i.status))+kv('Started',i.started_at)+kv('Resolved',i.resolved_at||'—')+kv('MTTR',i.duration_seconds!=null?i.duration_seconds+'s':'—')+kv('Resolution',i.resolution||'—');
+  $('#m-diag').innerHTML='<h3 style="margin-top:16px">Diagnosis</h3>'+(i.diag_root_cause||i.diag_tier?diagHTML(i):'<p class="muted">Not yet diagnosed.</p>')+
+    ((d.actions||[]).length?'<h3 style="margin-top:14px">Actions</h3><div class="card" style="padding:0"><table class="nohover"><tbody>'+d.actions.map(a=>'<tr><td>'+clockt(a.created_at)+'</td><td>'+(a.type||'')+' '+(a.target||'')+'</td><td>'+actTag(a.status)+'</td><td class="muted code">'+(a.output||'')+'</td></tr>').join('')+'</tbody></table></div>':'');
+  $('#ov').classList.add('on');}
+function closeModal(){$('#ov').classList.remove('on');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+/* chaos */
+async function chaos(action,target){const out=$('#chaos-out');out.innerHTML='Running <b>'+action+' '+target+'</b> …';
+  try{const r=await fetch('/chaos?action='+action+'&target='+target,{method:'POST'});const j=await r.json();const ok=j.success;
+    out.innerHTML='<span class="tag '+(ok?'done':'failed')+'">'+(ok?'OK':'FAILED')+'</span> '+action+' '+target+' — <span class="muted code">'+(j.output||j.detail||'')+'</span>';
+  }catch(e){out.innerHTML='<span class="tag failed">ERROR</span> '+e.message;}setTimeout(refreshLive,1500);}
+
+/* loop */
+async function refreshLive(){await Promise.all([loadStatus(),loadSamples(),loadTraffic(),loadBlocks(),loadScorecard(),loadBusiness(),loadServicemap(),loadDiagnosis(),loadTimeline(),loadTrend(),loadIncidentsTable()]);}
+async function init(){$('#arch-endpoint').textContent='';applyRole();await loadHealth();await refreshLive();
+  const b=await getJSON('/business');if(b&&b.site_base)$('#arch-endpoint').innerHTML='Patient endpoint · <span class="code">'+b.site_base.replace(/^https?:\/\//,'')+'</span>';
+  setInterval(refreshLive,8000);}
+init();
 </script>
 </body>
 </html>
